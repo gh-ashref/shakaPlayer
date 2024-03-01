@@ -1,0 +1,8 @@
+{
+  "/canalplus": {
+    "target": "https://forja.me/canalplus/api/824",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {"^/api" : ""}
+  }
+}

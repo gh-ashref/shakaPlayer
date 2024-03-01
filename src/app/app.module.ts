@@ -3,6 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './app.component';
 import { ShakaPlayerComponent } from './shared/shaka-player/shaka-player.component';
+import {HttpClientModule} from "@angular/common/http";
 
 @NgModule({
   declarations: [
@@ -10,7 +11,8 @@ import { ShakaPlayerComponent } from './shared/shaka-player/shaka-player.compone
     ShakaPlayerComponent
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]

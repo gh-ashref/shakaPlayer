@@ -1,7 +1,9 @@
-import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
-import { Platform } from '@angular/cdk/platform';
+import {Component, AfterViewInit, ElementRef, ViewChild} from '@angular/core';
+import {Platform} from '@angular/cdk/platform';
+import {CanalPlusService} from "./canalplus.service";
 
 declare let shaka: any;
+
 @Component({
   selector: 'app-shaka-player',
   templateUrl: './shaka-player.component.html',
@@ -14,21 +16,26 @@ export class ShakaPlayerComponent implements AfterViewInit {
   videoElement: HTMLVideoElement | undefined;
   videoContainerElement: HTMLDivElement | undefined;
   player: any;
+  started = false;
 
-  constructor(private platform: Platform) {}
+  constructor(private platform: Platform, private canalPlusService: CanalPlusService) {
+  }
 
   ngAfterViewInit(): void {
     shaka.polyfill.installAll();
     if (shaka.Player.isBrowserSupported()) {
       this.videoElement = this.videoElementRef?.nativeElement;
       this.videoContainerElement = this.videoContainerRef?.nativeElement;
-      this.initPlayer();
+      this.canalPlusService.getCanalPlusF1Data().subscribe(data => {
+        this.initPlayer(data.source);
+
+      });
     } else {
       console.error('Browser not supported!');
     }
   }
 
-  private initPlayer() {
+  private initPlayer(mpdUrl: string) {
     this.player = new shaka.Player(this.videoElement);
 
     const ui = new shaka.ui.Overlay(
@@ -37,61 +44,40 @@ export class ShakaPlayerComponent implements AfterViewInit {
       this.videoElement
     );
 
-    // const cert = fetch("YOUR FAIRPLAY CERTIFICATE URL");
+    const config = {
+      'enableTooltips': true
+    }
+    ui.configure(config);
 
-    // if (this.platform.SAFARI) {
-    //   this.player.configure({
-    //     preferredAudioLanguage: 'en-US',
-    //     drm: {
-    //       servers: {
-    //         'com.apple.fps.1_0': '[fairplay license server URL]',
-    //       },
-    //       advanced: {
-    //         'com.apple.fps.1_0': {
-    //           serverCertificate: new Uint8Array(cert),
-    //         },
-    //       },
-    //     },
-    //   });
-    // } else {
-    //   this.player.configure({
-    //     drm: {
-    //       servers: {
-    //         'com.widevine.alpha': '[Widevine license server URL]',
-    //       },
-    //       advanced: {
-    //         'com.widevine.alpha': {
-    //           videoRobustness: 'SW_SECURE_CRYPTO',
-    //           audioRobustness: 'SW_SECURE_CRYPTO',
-    //         },
-    //       },
-    //     },
-    //   });
-    // }
+    this.player.configure({
+      drm: {
+        clearKeys: {
+          '2b3eca9093e84eb3941aec39612dc814': "97e2d3e0037b0394b3d52ad2393038d1",
+          '93c2893555a240598a4a0ae40eb407d5': "ac7000a06c8c7ec0b33881d7051adc56",
+          '482032e4d54c48698814d1995a3f452c': "692ff1301d75d6c6f756fc31197fff9a",
+          'f370399659f54954a80a0e53c7a87b40': "c94fd8c303dbc9f6415ac2744ed92113"
+        },
+        servers: {},
+        advanced: {},
+        retryParameters: {maxAttempts: 2, baseDelay: 1000, backoffFactor: 2, fuzzFactor: 0.5, timeout: 0}
+      },
+    });
 
-    let videoUrl = "http://amssamples.streaming.mediaservices.windows.net/bc57e088-27ec-44e0-ac20-a85ccbcd50da/TearsOfSteel.ism/manifest(format=mpd-time-csf)";
+    let videoUrl = "https://dsh-m006-live-aka-canalplus.akamaized.net/__token__exp%3D1709329913~acl%3D%2Flive%2Fdisk%2Fcanalplusf1-hd%2F*~id%3D01HQX4J8E4TVMSK83PTX1AFK9N~hmac%3Db021422b0c992c7e59c8ebed6cc6721a72846b562c401abd2464783e11f1502f/live/disk/canalplusf1-hd/dash-fhddvr/canalplusf1-hd.mpd";
     if (this.platform.SAFARI) {
       videoUrl = "http://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel.ism/.m3u8";
     }
-
-    let captionUrlEn = "http://amssamples.streaming.mediaservices.windows.net/bc57e088-27ec-44e0-ac20-a85ccbcd50da/TOS-en.vtt";
-    let captionUrlEs = "http://amssamples.streaming.mediaservices.windows.net/bc57e088-27ec-44e0-ac20-a85ccbcd50da/TOS-es.vtt";
     this.player
-      .load(videoUrl)
+      .load(mpdUrl)
       .then(() => {
-        this.player.addTextTrackAsync(captionUrlEn, "en", "subtitles", 'text/vtt').then(() => {
-          this.player.addTextTrackAsync(captionUrlEs, "es", "subtitles", 'text/vtt').then(() => {
-            const textTracks = this.player.getTextTracks();
-            if (textTracks.length > 0) {
-              this.player.setTextTrackVisibility(true);
-              this.player.selectTextTrack(textTracks[0]);
-            }
-            this.videoElement?.play();
-          });
-        });
+        console.log("started")
       })
       .catch((e: any) => {
         console.error(e);
       });
+  }
+
+  startPlayer() {
+    this.started = true;
   }
 }
